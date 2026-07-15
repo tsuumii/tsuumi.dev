@@ -60,31 +60,67 @@
 
   function startTyping() {
     document.querySelectorAll('[data-typed]').forEach((el) => {
-      const full = el.getAttribute('data-text') || '';
-      const speed = parseInt(el.getAttribute('data-speed'), 10) || 42;
-      const delay = parseInt(el.getAttribute('data-delay'), 10) || 200;
+      let texts;
+      try {
+        texts = JSON.parse(el.getAttribute('data-texts') || 'null');
+      } catch (e) {
+        texts = null;
+      }
+      if (!Array.isArray(texts) || !texts.length) {
+        texts = [el.getAttribute('data-text') || ''];
+      }
+
+      const typeSpeed = parseInt(el.getAttribute('data-speed'), 10) || 42;
+      const deleteSpeed = parseInt(el.getAttribute('data-delete-speed'), 10) || Math.round(typeSpeed * 0.6);
+      const startDelay = parseInt(el.getAttribute('data-delay'), 10) || 200;
+      const holdDelay = parseInt(el.getAttribute('data-hold'), 10) || 2200;
+      const betweenDelay = parseInt(el.getAttribute('data-between'), 10) || 450;
 
       el.style.display = 'inline-block';
       el.style.textAlign = 'left';
       el.style.whiteSpace = 'nowrap';
       el.style.borderRight = '2px solid #b8a4ff';
-      el.textContent = full;
-      el.style.width = el.getBoundingClientRect().width + 'px';
-      el.textContent = '';
       el.style.animation = 'blink 1.1s steps(1) infinite';
-      let i = 0;
-      setTimeout(() => {
+
+      // Freeze the box at the widest of all the strings it'll cycle
+      // through, so switching between them never jitters/recenters (same
+      // reasoning as the original single-text width freeze).
+      let maxWidth = 0;
+      texts.forEach((t) => {
+        el.textContent = t;
+        maxWidth = Math.max(maxWidth, el.getBoundingClientRect().width);
+      });
+      el.style.width = maxWidth + 'px';
+      el.textContent = '';
+
+      let textIndex = 0;
+
+      function typeNext() {
+        const full = texts[textIndex];
+        let i = 0;
         const t = setInterval(() => {
           el.textContent = full.slice(0, ++i);
           if (i >= full.length) {
             clearInterval(t);
-            setTimeout(() => {
-              el.style.borderRight = 'none';
-              el.style.animation = 'none';
-            }, 900);
+            setTimeout(deleteCurrent, holdDelay);
           }
-        }, speed);
-      }, delay);
+        }, typeSpeed);
+      }
+
+      function deleteCurrent() {
+        const full = texts[textIndex];
+        let i = full.length;
+        const t = setInterval(() => {
+          el.textContent = full.slice(0, --i);
+          if (i <= 0) {
+            clearInterval(t);
+            textIndex = (textIndex + 1) % texts.length;
+            setTimeout(typeNext, betweenDelay);
+          }
+        }, deleteSpeed);
+      }
+
+      setTimeout(typeNext, startDelay);
     });
   }
 
