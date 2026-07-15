@@ -161,6 +161,15 @@ body.pre-enter .intro-name {
 body.site-entered .rise { animation: rise .8s cubic-bezier(.2, .7, .2, 1) forwards; }
 body.site-entered .pop { animation: pop 1s cubic-bezier(.2, .8, .2, 1) forwards; }
 
+/* .rise sets the `animation` shorthand directly, which would otherwise
+   fully replace .gradient-text's own gradientShift animation (higher
+   specificity wins the whole property, they don't merge) — this re-adds
+   gradientShift alongside rise for anything that's both, so the sweep
+   keeps going once the entrance animation finishes. */
+body.site-entered .rise.gradient-text {
+  animation: rise .8s cubic-bezier(.2, .7, .2, 1) forwards, gradientShift 5s linear infinite;
+}
+
 /* starfield */
 .bg {
   position: fixed;
@@ -439,6 +448,34 @@ body.site-entered .pop { animation: pop 1s cubic-bezier(.2, .8, .2, 1) forwards;
   text-shadow: 0 0 34px rgba(184, 164, 255, .35);
 }
 
+/* same subtle line treatment as .pill-divider, just horizontal since
+   this sits between two stacked (not side-by-side) elements. */
+.name-divider {
+  position: relative;
+  display: block;
+  width: 320px;
+  height: 1px;
+  margin: 10px auto;
+  background: linear-gradient(90deg, transparent, rgba(184, 164, 255, .65), transparent);
+}
+
+.name-divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: #c9bfff;
+  box-shadow: 0 0 8px 1px rgba(201, 191, 255, .8);
+}
+
+.tagline-lg {
+  font-size: 18px;
+  margin: 0px;
+}
+
 /* scattered, slowly-drifting letters (see initDriftText): .tl holds the
    fixed per-letter scatter rotation, .tl-drift (nested inside) holds the
    slow wander animation — kept on separate elements so the animation
@@ -449,14 +486,74 @@ body.site-entered .pop { animation: pop 1s cubic-bezier(.2, .8, .2, 1) forwards;
 
 .tl-drift {
   display: inline-block;
-  animation-name: letterDrift;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
+  background-image: linear-gradient(175deg,rgba(28, 17, 79, 1) 0%, rgba(28, 17, 79, 1) 20%, rgba(50, 36, 112, 1) 30%, rgba(70, 54, 135, 1) 44%, rgba(226, 222, 255, 1) 50%, rgba(77, 65, 139, 1) 51%, rgba(70, 54, 135, 1) 53%, rgba(50, 36, 112, 1) 70%, rgba(28, 17, 79, 1) 80%, rgba(28, 17, 79, 1) 100%);
+  background-size: 100% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  /* text-shadow is inherited from .name's own glow — reset it here so it
+     doesn't quietly stack with the filter-based glow below. */
+  text-shadow: none;
+  /* text-shadow is a per-glyph paint hack that, in combination with
+     transparent fill + background-clip:text, renders inconsistently —
+     browsers can paint the shadow copies over the clipped gradient
+     instead of behind it, which is why the gradient disappeared under
+     the white outline. filter: drop-shadow() operates on the element's
+     already-composited pixels (gradient-through-text-mask included), so
+     it reliably stays behind the visible gradient. Also sidesteps the
+     -webkit-text-stroke bug where tight curves like "m" turned into a
+     solid blob — this builds the outline from 8 tight, unblurred
+     drop-shadows in a ring instead. */
+  /* Each ring shadow gets a touch of blur (instead of 0) so the 8
+     discrete copies melt into one continuous outline rather than
+     showing as individually-visible offset ghosts. */
+  filter:
+    drop-shadow(0px 0px 1px #8c80e4)
+    drop-shadow(0px 0px 2px #b3ade7)
+    drop-shadow(0px 0px 3px #dad6f7);
+  /* letterDrift's duration/delay are set per-letter in JS as a two-item
+     comma list (drift value, then a fixed value for gradientShift below)
+     so every letter's gradientShift stays perfectly in sync while drift
+     stays independently randomized. */
+  animation-name: letterDrift, gradientShift;
+  animation-timing-function: ease-in-out, linear;
+  animation-iteration-count: infinite, infinite;
 }
 
 @keyframes letterDrift {
   0%, 100% { transform: translate(0, 0); }
   50% { transform: translate(var(--dx, 3px), var(--dy, -3px)); }
+}
+
+/* The gradient runs at 172deg (near-vertical: top-to-bottom bands), so
+   the sweep animates background-position-y, not x. Its first and last
+   stops are the same color, so shifting the (double-height) background
+   by exactly one background-height per loop lands back on an identical
+   frame — a seamless, one-directional top-to-bottom sweep with no
+   reverse/ping-pong. */
+@keyframes gradientShift {
+  0% { background-position: 0 0%; }
+  100% { background-position: 0 -200%; }
+}
+
+/* Same animated gradient sweep + glow as the tsuumi letters (.tl-drift),
+   applied to a whole run of text at once instead of per-letter — no
+   scatter rotation, no letterDrift wander, just the gradient + glow. */
+.gradient-text {
+  display: inline-block;
+  background-image: linear-gradient(175deg, rgba(28, 17, 79, 1) 0%, rgba(28, 17, 79, 1) 20%, rgba(50, 36, 112, 1) 30%, rgba(70, 54, 135, 1) 44%, rgba(226, 222, 255, 1) 50%, rgba(77, 65, 139, 1) 51%, rgba(70, 54, 135, 1) 53%, rgba(50, 36, 112, 1) 70%, rgba(28, 17, 79, 1) 80%, rgba(28, 17, 79, 1) 100%);
+  background-size: 100% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  text-shadow: none;
+  filter:
+    drop-shadow(0px 0px 1px #8c80e4)
+    drop-shadow(0px 0px 2px #b3ade7)
+    drop-shadow(0px 0px 3px #dad6f7);
+  animation: gradientShift 5s linear infinite;
 }
 
 .tagline {

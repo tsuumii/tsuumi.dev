@@ -337,8 +337,12 @@
       inner.className = 'tl-drift';
       inner.style.setProperty('--dx', dx + 'px');
       inner.style.setProperty('--dy', dy + 'px');
-      inner.style.animationDuration = dur + 's';
-      inner.style.animationDelay = delay + 's';
+      // Two comma-separated values, matching the CSS `animation-name:
+      // letterDrift, gradientShift` order: drift keeps its own randomized
+      // timing, gradientShift stays fixed and at zero delay on every
+      // letter so the sweep stays perfectly synced across the whole word.
+      inner.style.animationDuration = dur + 's, 5s';
+      inner.style.animationDelay = delay + 's, 0s';
       inner.textContent = ch === ' ' ? ' ' : ch;
 
       outer.appendChild(inner);
