@@ -260,6 +260,68 @@ body.site-entered .rise.gradient-text {
   animation: drift 20s ease-in-out infinite alternate-reverse, glowpulse 11s ease-in-out infinite 1s;
 }
 
+/* cava-style audio visualizer: fixed to the viewport so it stays put
+   regardless of scroll, transparent canvas so only the bars are visible
+   over whatever's behind them. */
+.visualizer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 150px;
+  z-index: 55;
+  pointer-events: none;
+}
+
+.visualizer canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.viz-controls {
+  position: absolute;
+  right: 18px;
+  bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(14, 15, 24, .6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, .1);
+  pointer-events: auto;
+}
+
+.viz-btn {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  color: #e6e8f2;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: .85;
+  transition: opacity .2s ease;
+}
+
+.viz-btn:hover,
+.viz-btn:focus-visible {
+  opacity: 1;
+}
+
+.viz-volume {
+  width: 74px;
+  accent-color: var(--violet);
+  cursor: pointer;
+}
+
 .scroller {
   position: relative;
   z-index: 3;
@@ -542,7 +604,7 @@ body.site-entered .rise.gradient-text {
    scatter rotation, no letterDrift wander, just the gradient + glow. */
 .gradient-text {
   display: inline-block;
-  background-image: linear-gradient(175deg, rgba(28, 17, 79, 1) 0%, rgba(28, 17, 79, 1) 20%, rgba(50, 36, 112, 1) 30%, rgba(70, 54, 135, 1) 44%, rgba(226, 222, 255, 1) 50%, rgba(77, 65, 139, 1) 51%, rgba(70, 54, 135, 1) 53%, rgba(50, 36, 112, 1) 70%, rgba(28, 17, 79, 1) 80%, rgba(28, 17, 79, 1) 100%);
+  background-image: linear-gradient(175deg, rgba(28, 17, 79, 1) 0%, rgba(28, 17, 79, 1) 20%, rgba(50, 36, 112, 1) 30%, rgba(70, 54, 135, 1) 44%, rgba(70, 54, 135, 1) 53%, rgba(50, 36, 112, 1) 70%, rgba(28, 17, 79, 1) 80%, rgba(28, 17, 79, 1) 100%);
   background-size: 100% 200%;
   -webkit-background-clip: text;
   background-clip: text;
@@ -551,8 +613,7 @@ body.site-entered .rise.gradient-text {
   text-shadow: none;
   filter:
     drop-shadow(0px 0px 1px #8c80e4)
-    drop-shadow(0px 0px 2px #b3ade7)
-    drop-shadow(0px 0px 3px #dad6f7);
+    drop-shadow(0px 0px 2px #b3ade7);
   animation: gradientShift 5s linear infinite;
 }
 

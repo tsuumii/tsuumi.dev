@@ -150,6 +150,12 @@
     }
   }
 
+  // Set by initAudioVisualizer, called by initIntro's enter() — starting
+  // an AudioContext requires an actual user gesture, and the intro click
+  // is the only gesture this page gets, so the two have to be wired
+  // together like this rather than the visualizer just starting itself.
+  let startBgAudio = null;
+
   function initIntro() {
     const intro = document.querySelector('[data-intro]');
     const enterBtn = document.querySelector('[data-intro-enter]');
@@ -172,6 +178,7 @@
       enterBtn.style.opacity = '0';
 
       spawnFallStars(starLayer, 80);
+      if (startBgAudio) startBgAudio();
 
       setTimeout(() => {
         document.body.classList.remove('pre-enter');
@@ -192,6 +199,129 @@
         e.preventDefault();
         enter();
       }
+    });
+  }
+
+  // Cava-style bar visualizer driven by a Web Audio AnalyserNode on
+  // assets/song.mp3. Bars are grouped from the FFT bins on an exponential
+  // curve (not a straight 1-bin-per-bar slice) so the low end isn't
+  // crammed into the first couple of bars while the top end sits flat —
+  // most musical energy lives in the lower frequencies.
+  function initAudioVisualizer() {
+    const audio = document.querySelector('[data-bg-audio]');
+    const canvas = document.querySelector('[data-viz-canvas]');
+    const playBtn = document.querySelector('[data-viz-playpause]');
+    const muteBtn = document.querySelector('[data-viz-mute]');
+    const volumeSlider = document.querySelector('[data-viz-volume]');
+    if (!audio || !canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    // 32 unique frequency bars, each mirrored to a matching bar on the
+    // other side of center — 64 bars on screen, 32 underlying values, so
+    // bass sits at the center and fans outward symmetrically.
+    const barCount = 16;
+    const totalBars = barCount * 2;
+    const barHeights = new Array(barCount).fill(0);
+    let analyser = null;
+    let dataArray = null;
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.max(1, Math.round(rect.width * devicePixelRatio));
+      canvas.height = Math.max(1, Math.round(rect.height * devicePixelRatio));
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function draw() {
+      requestAnimationFrame(draw);
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+      if (!analyser) return;
+
+      analyser.getByteFrequencyData(dataArray);
+      const bufferLength = dataArray.length;
+      // The last bar or two of the exponential curve was landing in the
+      // ~top 15% of the spectrum, which is close to silent in most music
+      // (mp3 encoders commonly roll it off entirely) — after the mirror
+      // swap that range sits at the two center bars, so they read as
+      // "stuck". Capping the curve to the more musically-active bins
+      // fixes it without touching the mirroring itself.
+      const usableBins = Math.max(barCount, Math.floor(bufferLength * 0.8));
+      const gap = w * 0.006;
+      const barWidth = (w - gap * (totalBars - 1)) / totalBars;
+
+      ctx.fillStyle = 'rgba(184, 164, 255, 0.6)';
+
+      for (let i = 0; i < barCount; i++) {
+        const start = Math.floor(Math.pow(usableBins, i / barCount));
+        const end = Math.max(start + 1, Math.floor(Math.pow(usableBins, (i + 1) / barCount)));
+        let sum = 0;
+        let count = 0;
+        for (let j = start; j < end && j < bufferLength; j++) {
+          sum += dataArray[j];
+          count++;
+        }
+        const target = count ? sum / count / 255 : 0;
+        barHeights[i] += (target - barHeights[i]) * 0.25;
+
+        const barH = Math.max(h * 0.012, barHeights[i] * h * 0.92);
+        const y = h - barH;
+
+        // mirrored pair, sides swapped from the original layout: low
+        // frequencies now sit at the two outer edges and fan inward
+        // toward the center as i climbs toward the higher frequencies,
+        // instead of the other way around.
+        const leftSlot = i;
+        const rightSlot = totalBars - 1 - i;
+        ctx.fillRect(leftSlot * (barWidth + gap), y, barWidth, barH);
+        ctx.fillRect(rightSlot * (barWidth + gap), y, barWidth, barH);
+      }
+    }
+    requestAnimationFrame(draw);
+
+    function setupAudioGraph() {
+      if (analyser) return;
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const audioCtx = new AudioCtx();
+      const source = audioCtx.createMediaElementSource(audio);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.75;
+      source.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+      startBgAudio = () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        audio.play().catch(() => {});
+      };
+    }
+    setupAudioGraph();
+    // setupAudioGraph can no-op (no AudioContext support, or called too
+    // early); make sure entering the site still at least tries to play
+    // the audio even without a visualizer graph.
+    if (!startBgAudio) {
+      startBgAudio = () => audio.play().catch(() => {});
+    }
+
+    playBtn.addEventListener('click', () => {
+      if (audio.paused) audio.play().catch(() => {});
+      else audio.pause();
+    });
+    audio.addEventListener('play', () => { playBtn.textContent = '⏸'; });
+    audio.addEventListener('pause', () => { playBtn.textContent = '▶'; });
+
+    muteBtn.addEventListener('click', () => {
+      audio.muted = !audio.muted;
+      muteBtn.textContent = audio.muted ? '🔇' : '🔊';
+    });
+
+    audio.volume = parseFloat(volumeSlider.value);
+    volumeSlider.addEventListener('input', () => {
+      audio.volume = parseFloat(volumeSlider.value);
     });
   }
 
@@ -392,6 +522,7 @@
 
     loadImageSlot('[data-avatar]', 'assets/avatar.png');
     initPointerFX(bg);
+    initAudioVisualizer();
     initIntro();
     initPillBar();
     initDriftText();

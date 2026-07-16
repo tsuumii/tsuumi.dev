@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css?v=0a91e4b9">
+<link rel="stylesheet" href="style.css?v=0386d2a6">
 </head>
 <body class="pre-enter">
 
@@ -38,6 +38,16 @@
     <span class="pill-hint">scroll to browse ✧</span>
   </div>
 
+  <audio data-bg-audio src="assets/song.mp3" loop preload="auto"></audio>
+  <div class="visualizer" data-visualizer>
+    <canvas data-viz-canvas></canvas>
+    <div class="viz-controls">
+      <button class="viz-btn" data-viz-mute type="button" aria-label="Mute">🔊</button>
+      <input class="viz-volume" data-viz-volume type="range" min="0" max="1" step="0.01" value="0.5" aria-label="Volume">
+      <button class="viz-btn" data-viz-playpause type="button" aria-label="Play or pause music">⏸</button>
+    </div>
+  </div>
+
   <main class="scroller" data-scroller>
 
     <!-- hero -->
@@ -56,14 +66,16 @@
 
       <div class="intro-name name" data-tsuumi>t s u u m i</div>
       <span class="name-divider"></span>
-      <p class="tagline-lg gradient-text rise">ever-thawing precipice</p>
+      <p class="tagline-lg gradient-text rise">professional snoozer</p>
       <p class="tagline rise" style="animation-delay:.5s"><br>a few may also know me as "zenith"</p>
 
       <div class="bio rise" style="animation-delay:.7s">
-        <p class="bio-line">✦.˚★— "contact: tsuumi@proton.me"</p>
+        <p class="bio-line">"email: tsuumi@proton.me" ★.˚✦—</p>
+        <p class="bio-line">✧.˚★— "discord: tsuumiverse"</p>
+        <p class="bio-line">𝆕 music: sanctuary - DM DOKURO</p>
       </div>
 
-      <p class="typed" data-typed data-texts='["may i stand unshaken, amidst a dying world...", "itinerant stars wander across the night sky.."]' data-speed="46" data-delete-speed="28" data-delay="800" data-hold="2400" data-between="450"></p>
+      <p class="typed" data-typed data-texts='["itinerant stars wander across the moonlit void....", "ephemeral strophes bounded within the night sky...", "they stood unshaken, waiting, amidst a dying world"]' data-speed="46" data-delete-speed="28" data-delay="800" data-hold="2400" data-between="450"></p>
 
       <nav class="links rise" style="animation-delay:.9s">
         <a href="https://steamcommunity.com/id/tsuumii/" target="_blank" rel="noopener noreferrer" class="icon-link glow-blue" data-tilt data-tilt-max="16" aria-label="Steam">
@@ -148,13 +160,13 @@
         </article>
 
         <div class="footer" data-reveal>
-          <p class="footer-text">more soon ✧ · tsuumi.dev</p>
+          <p class="footer-text">more soon ✧ tsuumi.dev</p>
         </div>
       </div>
     </section>
 
   </main>
 
-<script src="script.js?v=9bfdae1b"></script>
+<script src="script.js?v=7a3b6c9c"></script>
 </body>
 </html>
