@@ -7,6 +7,7 @@
   --lilac: #b9b4ff;
   --amber: #e8c07a;
   --rose: #e88a9a;
+  --mint: #8fd6b4;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -422,6 +423,27 @@ details[open] summary::after { color: var(--lilac); }
 
 .quote { font-style: italic; }
 footer p + p { margin-top: 2px; }
+
+.footer-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 10px;
+}
+
+.version {
+  color: var(--muted);
+  border: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.version::before { content: "● "; color: var(--mint); font-size: 8px; vertical-align: 1px; }
+.version:hover { color: var(--accent); }
+.version[hidden] { display: none; }
 
 footer {
   color: var(--muted);

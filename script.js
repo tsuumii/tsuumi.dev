@@ -109,3 +109,61 @@ document.querySelectorAll('[data-copy]').forEach((btn) => {
     }, 1800);
   });
 });
+
+document.querySelector('[data-year]').textContent = new Date().getFullYear();
+
+// show the latest commit on main, and reload once a newer commit has
+// actually been deployed: a new sha alone isn't enough, since pages takes
+// a minute or so to publish, so we also wait for the served files to change
+(() => {
+  const REPO = 'tsuumii/tsuumi.dev';
+  const POLL_MS = 3 * 60 * 1000;
+  const FILES = [location.pathname, 'style.css', 'script.js'];
+  const link = document.querySelector('[data-version]');
+  let currentSha = null;
+  let snapshot = null;
+
+  async function latestCommit() {
+    const res = await fetch(`https://api.github.com/repos/${REPO}/commits/main`, {
+      headers: { Accept: 'application/vnd.github+json' },
+      cache: 'no-store'
+    });
+    if (!res.ok) throw new Error(res.status);
+    return res.json();
+  }
+
+  // cache: 'reload' also refreshes the http cache, so the reload that
+  // follows picks up the new css/js instead of a stale copy
+  async function deployedFiles() {
+    const texts = await Promise.all(FILES.map((f) =>
+      fetch(f, { cache: 'reload' }).then((r) => (r.ok ? r.text() : ''))
+    ));
+    return texts.join('\n');
+  }
+
+  async function check() {
+    if (document.hidden) return;
+    try {
+      const { sha } = await latestCommit();
+      if (sha === currentSha || !snapshot) return;
+      if ((await deployedFiles()) !== snapshot) location.reload();
+    } catch {}
+  }
+
+  (async () => {
+    try {
+      const commit = await latestCommit();
+      currentSha = commit.sha;
+      link.textContent = `v${commit.sha.slice(0, 7)}`;
+      link.href = commit.html_url;
+      link.title = commit.commit.message.split('\n')[0];
+      link.hidden = false;
+    } catch {
+      return;
+    }
+    if (location.protocol === 'file:') return;
+    try { snapshot = await deployedFiles(); } catch {}
+    setInterval(check, POLL_MS);
+    document.addEventListener('visibilitychange', check);
+  })();
+})();
